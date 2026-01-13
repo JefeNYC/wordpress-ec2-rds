@@ -1,0 +1,29 @@
+#!/bin/bash
+# Install dependencies
+sudo dnf update -y
+sudo dnf install -y httpd php php-mysqlnd php-fpm php-xml php-gd php-mbstring php-intl php-json php-cli unzip mariadb105-server
+
+# Start services
+sudo systemctl start httpd
+sudo systemctl enable httpd
+
+# Setup WordPress
+cd /var/www/html
+sudo wget https://wordpress.org/latest.zip
+sudo unzip latest.zip
+sudo mv wordpress/* .
+sudo rmdir wordpress
+sudo rm latest.zip
+
+# Create wp-config.php and inject variables
+sudo cp wp-config-sample.php wp-config.php
+sudo sed -i "s/database_name_here/webserver/" wp-config.php
+sudo sed -i "s/username_here/admin/" wp-config.php
+sudo sed -i "s/password_here/${db_password}/" wp-config.php
+sudo sed -i "s/localhost/${db_endpoint}/" wp-config.php
+
+# Fix permissions
+sudo chown -R apache:apache /var/www/html
+sudo find /var/www/html -type d -exec chmod 755 {} \;
+sudo find /var/www/html -type f -exec chmod 644 {} \;
+sudo systemctl restart httpd
